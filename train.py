@@ -21,24 +21,20 @@ tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
 ds = load_from_disk("ds")
-goodwiki = load_dataset("euirim/goodwiki", split="train").shuffle(seed=42).select(range(1000))
+minipile = load_dataset("JeanKaddour/minipile", split="train").shuffle(seed=42).select(range(1000))
 
 prefix_map = {
-    "human": "<|im_start|>user\n",
-    "gpt": "<|im_start|>assistant\n",
-    "assistant": "<|im_start|>assistant\n"
+    "human": "[user]\n",
+    "gpt": "[assistant]\n",
+    "assistant": "[assistant]\n"
 }
 
 seq_len = 512
 
-def goodwiki_map_fn(row):
-    prefix = f"[WIKI]{row['title']}\n"
-    input_ids = tokenizer.encode(prefix, add_special_tokens=False, padding=False, truncation=False)
-    labels = [-100]*len(input_ids)
-    
-    toks = tokenizer.encode(row['markdown'] + tokenizer.eos_token, add_special_tokens=False, truncation=False)
-    input_ids += toks
-    labels += toks
+def minipile_map_fn(row):
+    toks = tokenizer.encode(row['text'] + tokenizer.eos_token, add_special_tokens=False, truncation=False)
+    input_ids = toks
+    labels = toks
 
     input_ids = input_ids[:seq_len]
     labels = labels[:seq_len]
@@ -48,11 +44,6 @@ def goodwiki_map_fn(row):
 def ds_map_fn(row):
     input_ids = []
     labels = []
-
-    if row['system'] != "" and row['system'] != None:
-        input_ids += tokenizer.encode(f"<|im_start|>system\n{row['system']}<|im_end|>\n", add_special_tokens=False, padding=False, truncation=False)
-        labels += [-100]*len(input_ids)
-
 
     for msg in row['conversations']:
         if msg['from'] == 'gpt_rationale':
@@ -72,7 +63,7 @@ def ds_map_fn(row):
             labels = labels + [-100]*len(toks)
         elif msg['from'] == 'gpt_target':
             # Do not mask
-            toks = tokenizer.encode(msg['value'] + "<|im_end|>", add_special_tokens=False, padding=False)
+            toks = tokenizer.encode(msg['value'], add_special_tokens=False, padding=False)
             input_ids = input_ids + toks
             labels = labels + toks
         else:
@@ -80,7 +71,7 @@ def ds_map_fn(row):
             input_ids = input_ids + toks
             labels = labels + [-100]*len(toks)
 
-            toks = tokenizer.encode(msg['value'] + "<|im_end|>\n", add_special_tokens=False, padding=False)
+            toks = tokenizer.encode(msg['value'], add_special_tokens=False, padding=False)
             input_ids = input_ids + toks
             labels = labels + ([-100]*len(toks) if msg['from'] == "human" else toks)
 
@@ -89,14 +80,12 @@ def ds_map_fn(row):
 
     return {'input_ids': torch.Tensor(input_ids).int(), 'labels': torch.Tensor(labels).int()}
 
-goodwiki = goodwiki.map(goodwiki_map_fn, remove_columns=goodwiki.column_names)
+minipile = minipile.map(minipile_map_fn, remove_columns=minipile.column_names)
 ds = ds.map(ds_map_fn, remove_columns=ds.column_names)
-ds = concatenate_datasets([ds, goodwiki]).shuffle(seed=32)
+ds = concatenate_datasets([ds, minipile]).shuffle(seed=32)
 ds = ds.filter(lambda x: (torch.Tensor(x['labels']) != -100).sum().item() > 1)
 
 class DataCollatorForSupervisedDataset:
-    """Collate examples for supervised fine-tuning."""
-
     tokenizer: PreTrainedTokenizer
     seq_len: int
 
@@ -136,7 +125,7 @@ trainer = SlimTrainer(
     batch_size=batch_sz,
     wandb_entity="jpritsk",
     wandb_project="Zen",
-    wandb_name="Zen 7B Human",
+    wandb_name="Zen 7B Human (min)",
     train_data=ds,
     neft=True,
     mixce=True,
@@ -144,8 +133,8 @@ trainer = SlimTrainer(
 )
 trainer.train()
 
-model.save_pretrained("Zen_7B_human")
-tokenizer.save_pretrained("Zen_7B_human")
+model.save_pretrained("Zen_7B_human_min")
+tokenizer.save_pretrained("Zen_7B_human_min")
 
 
 wandb.finish()
