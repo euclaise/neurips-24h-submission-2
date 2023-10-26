@@ -21,7 +21,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
 ds = load_from_disk("ds")
-minipile = load_dataset("JeanKaddour/minipile", split="train").shuffle(seed=42).select(range(1000))
+minipile = load_dataset("JeanKaddour/minipile", split="train").shuffle(seed=42).select(range(1500))
 
 prefix_map = {
     "human": "[user]\n",

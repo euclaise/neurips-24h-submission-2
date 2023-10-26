@@ -3,7 +3,7 @@ import random
 import re
 import pandas
 
-mqa = load_dataset("euclaise/mqa", split='train').shuffle(seed=42).select(range(15000))
+mqa = load_dataset("euclaise/mqa", split='train').shuffle(seed=42).select(range(20000))
 st = load_dataset("euclaise/symtune_mini", split='train').shuffle(seed=42).select(range(250))
 samsum = load_dataset("samsum", split='train').shuffle(seed=42).select(range(250))
 
