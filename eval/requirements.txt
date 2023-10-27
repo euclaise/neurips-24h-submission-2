@@ -1,0 +1,17 @@
+# FAST API
+fastapi>=0.68.0,<0.69.0
+pydantic>=1.8.0,<2.0.0
+uvicorn>=0.15.0,<0.16.0
+huggingface-hub==0.17.3
+transformers @ git+https://github.com/huggingface/transformers.git@21dc5859421cf0d7d82d374b10f533611745a8c5
+transformers-stream-generator==0.0.4
+torch==2.1.0
+torchaudio==2.1.0
+torchvision==0.16.0
+tqdm==4.66.1
+bitsandbytes==0.41.1
+scipy
+tokenizers
+datasets
+pandas
+accelerate
