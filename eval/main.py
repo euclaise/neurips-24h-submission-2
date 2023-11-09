@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO)
 login(token=os.environ["HUGGINGFACE_TOKEN"])
 
 model = AutoModelForCausalLM.from_pretrained(
-    'euclaise/Zen-7B_neurips',
+    'euclaise/Tao-7B_neurips',
     return_dict=True,
     torch_dtype=torch.bfloat16,
     device_map="cuda"
